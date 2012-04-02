@@ -1,0 +1,9 @@
+body {
+    padding-top: 40px !important;
+}
+
+.tooltip input {
+    height: 10px;
+    width: 150px;
+    margin: 0;
+}
