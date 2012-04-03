@@ -1,17 +1,13 @@
-{Formular} = require 'models/formular'
-{OutputView} = require 'views/output'
-{InputView} = require 'views/input'
-{Slider} = require 'views/slider'
-
+{Slider} = require 'views/widgets/slider'
+{Container} = require 'views/factories/container'
 class exports.FormularFactory
 
     constructor: ->
         @paper = Raphael('stage', 500, 500)
         @slider= new Slider()
+
         @
 
     create: (parent) ->
-        model = new Formular
-        output = new OutputView(model, @paper)
-        input = new InputView {model: model, parent: parent, slider: @slider}
+        new Container({slider: @slider, parent: parent})
         @
