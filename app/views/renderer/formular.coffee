@@ -7,18 +7,15 @@ class exports.FormularRenderer
 
     render: => 
 
-        @set.forEach (el)->
-            el.remove()
+        if @path
+            @path.remove()
 
         path = ''
-        for x in [0..@paper.width] by 10
-            y = @calculateY x
-            if $.isNumeric y
-                @set.push @paper.circle(x, y, 5)
-        #     point = @createPoint(x)
-        #     path += point        
+        for x in [0..@paper.width] by 1
+            point = @createPoint(x)
+            path += point        
 
-        # @path = @paper.path(path)
+        @path = @paper.path(path)
         @
 
     createPoint: (x) ->

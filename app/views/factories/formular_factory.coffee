@@ -9,5 +9,9 @@ class exports.FormularFactory
         @
 
     create: (parent) ->
-        new Container({slider: @slider, parent: parent})
+        new Container(
+            slider: @slider
+            parent: parent
+            paper: @paper
+        )
         @

@@ -244,7 +244,7 @@
     Container.prototype.initialize = function(options) {
       this.el = $(this.el).html(this.template);
       this.inputs = this.el.find('div');
-      this.paper = Raphael('stage', 500, 500);
+      this.paper = options.paper;
       this.slider = options.slider;
       options.parent.append(this.el);
       return this.create();
@@ -252,7 +252,7 @@
 
     Container.prototype.tagName = 'li';
 
-    Container.prototype.template = '<select><option>select type</option></select><div>';
+    Container.prototype.template = '<div/>';
 
     Container.prototype.create = function() {
       var input, model, output;
@@ -293,7 +293,8 @@
     FormularFactory.prototype.create = function(parent) {
       new Container({
         slider: this.slider,
-        parent: parent
+        parent: parent,
+        paper: this.paper
       });
       return this;
     };
@@ -378,15 +379,14 @@
     }
 
     FormularRenderer.prototype.render = function() {
-      var path, x, y, _ref;
-      this.set.forEach(function(el) {
-        return el.remove();
-      });
+      var path, point, x, _ref;
+      if (this.path) this.path.remove();
       path = '';
-      for (x = 0, _ref = this.paper.width; x <= _ref; x += 10) {
-        y = this.calculateY(x);
-        if ($.isNumeric(y)) this.set.push(this.paper.circle(x, y, 5));
+      for (x = 0, _ref = this.paper.width; x <= _ref; x += 1) {
+        point = this.createPoint(x);
+        path += point;
       }
+      this.path = this.paper.path(path);
       return this;
     };
 

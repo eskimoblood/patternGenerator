@@ -8,14 +8,14 @@ class exports.Container extends Backbone.View
     initialize: (options)->
         @el = $(@el).html(@template)
         @inputs = @el.find('div')
-        @paper = Raphael('stage', 500, 500)
+        @paper = options.paper
         @slider =options.slider
         options.parent.append @el
         @create()
 
     tagName: 'li'
 
-    template: '<select><option>select type</option></select><div>'
+    template: '<div/>'
 
     create: -> 
         model = new Formular()
