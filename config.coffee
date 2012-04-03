@@ -1,42 +1,57 @@
-{languages, plugins} = require 'brunch-extensions'
-
-# Make config loadable via require() for brunch.
 exports.config =
-  # Available plugins:
-  # * AssetsPlugin: copy `app/assets` contents to `build/`
-  plugins: [plugins.AssetsPlugin]
+  # Edit the next line to change default build path.
+  buildPath: 'public'
 
-  # Contains a list of output filenames that your application would generate.
-  # Format:
-  #
-  # 'filename': 
-  #   languages:
-  #     'regExp, with which input files will be matched': language class
-  #   order:
-  #     before: [files, that would be loaded before anything else]
-  #     after: [files, that would be loaded after anything else]
-  #
   files:
-    'scripts/app.js':
-      languages:
-        '\.js$': languages.JavaScriptLanguage
-        '\.coffee$': languages.CoffeeScriptLanguage
-        '\.eco$': languages.EcoLanguage
+    javascripts:
+      # Defines what file will be generated with `brunch generate`.
+      defaultExtension: 'coffee'
+      # Describes how files will be compiled & joined together.
+      # Available formats:
+      # * 'outputFilePath'
+      # * map of ('outputFilePath': /regExp that matches input path/)
+      # * map of ('outputFilePath': function that takes input path)
+      joinTo:
+        'javascripts/app.js': /^app/
+        'javascripts/vendor.js': /^vendor/
+      # Defines compilation order.
+      # `vendor` files will be compiled before other ones
+      # even if they are not present here.
       order:
         before: [
-          'vendor/scripts/console-helper.js'
-          'vendor/scripts/jquery-1.7.js'
-          'vendor/scripts/underscore-1.1.7.js'
-          'vendor/scripts/backbone-0.5.3.js'
+          'vendor/scripts/console-helper.js',
+          'vendor/scripts/jquery-1.7.1.js',
+          'vendor/scripts/underscore-1.3.1.js',
+          'vendor/scripts/backbone-0.9.1.js',
           'vendor/scripts/raphael.js'
         ]
 
-    'styles/app.css':
-      languages:
-        '\.css$': languages.CSSLanguage
-        '\.styl$': languages.StylusLanguage
+    stylesheets:
+      defaultExtension: 'styl'
+      joinTo: 'stylesheets/app.css'
       order:
         before: [
-          'vendor/styles/bootstrap.min.css'
+          'vendor/styles/bootstrap.css'
         ]
-        after: ['vendor/styles/styles.css']
+        after: []
+
+    templates:
+      defaultExtension: 'eco'
+      joinTo: 'javascripts/app.js'
+
+  # Change this if you're using something other than backbone (e.g. 'ember').
+  # Content of files, generated with `brunch generate` depends on the setting.
+  # framework: 'backbone'
+
+  # Enable or disable minifying of result js / css files.
+  minify: no
+
+  # Settings of web server that will run with `brunch watch [--server]`.
+  # server:
+  #   # Path to your server node.js module.
+  #   # If it's commented-out, brunch will use built-in express.js server.
+  #   path: 'server.coffee'
+  #   port: 3333
+  #   # Run even without `--server` option?
+  #   run: yes
+

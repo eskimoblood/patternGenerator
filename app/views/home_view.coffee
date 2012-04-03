@@ -2,6 +2,7 @@
 
 class exports.HomeView extends Backbone.View
 
+    tagName: 'div'
 
     initialize: ->
         @factory = new FormularFactory
@@ -9,5 +10,5 @@ class exports.HomeView extends Backbone.View
         @
 
     render: =>
-        @factory.create @el
+        @factory.create @el.find('ul')
         @
