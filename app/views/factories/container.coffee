@@ -1,5 +1,6 @@
-{InputView} =  require 'views/inputs/input'
-{FormularRenderer} =  require 'views/renderer/formular'
+{FormularLineRenderer} =  require 'views/renderer/formular_line'
+{FormularRectRenderer} =  require 'views/renderer/formular_rect'
+{InputFactory} =  require 'views/factories/input_factory'
 {Formular} = require 'models/formular'
 
 
@@ -9,7 +10,7 @@ class exports.Container extends Backbone.View
         @el = $(@el).html(@template)
         @inputs = @el.find('div')
         @paper = options.paper
-        @slider =options.slider
+        @inputFactory = new InputFactory()
         options.parent.append @el
         @create()
 
@@ -19,5 +20,9 @@ class exports.Container extends Backbone.View
 
     create: -> 
         model = new Formular()
-        output = new FormularRenderer(model, @paper)
-        input = new InputView {model: model, parent: @inputs, slider: @slider}
+        output = new FormularRectRenderer(model, @paper)
+        output.inputs.forEach((input) => 
+            @inputFactory.create(input, {model: model, parent: @inputs})
+        )
+        # input = new InputView {model: model, parent: @inputs, slider: @slider}
+        # input = new Range {model: model, parent: @inputs}

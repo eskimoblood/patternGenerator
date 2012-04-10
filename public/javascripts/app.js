@@ -48,6 +48,53 @@
     };
   }
 }).call(this);(this.require.define({
+  "views/inputs/input": function(exports, require, module) {
+    (function() {
+  var AbstractInput,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  AbstractInput = require('views/inputs/abstractInput').AbstractInput;
+
+  exports.InputView = (function(_super) {
+
+    __extends(InputView, _super);
+
+    function InputView() {
+      this.sliderCallback = __bind(this.sliderCallback, this);
+      this.change = __bind(this.change, this);
+      InputView.__super__.constructor.apply(this, arguments);
+    }
+
+    InputView.prototype.initialize = function(options) {
+      InputView.__super__.initialize.call(this, options);
+      console.log(this.model);
+      this.slider = options.slider;
+      return this;
+    };
+
+    InputView.prototype.template = '<input/>';
+
+    InputView.prototype.change = function(event) {
+      InputView.__super__.change.call(this);
+      return this.slider.show(this.input, this.sliderCallback);
+    };
+
+    InputView.prototype.sliderCallback = function(value) {
+      this.model.setFormular(value);
+      return this.input.val(value);
+    };
+
+    return InputView;
+
+  })(AbstractInput);
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
   "helpers": function(exports, require, module) {
     (function() {
 
@@ -74,43 +121,6 @@
   }
 }));
 (this.require.define({
-  "initialize": function(exports, require, module) {
-    (function() {
-  var BrunchApplication, HomeView, MainRouter,
-    __hasProp = Object.prototype.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
-  BrunchApplication = require('helpers').BrunchApplication;
-
-  MainRouter = require('routers/main_router').MainRouter;
-
-  HomeView = require('views/home_view').HomeView;
-
-  exports.Application = (function(_super) {
-
-    __extends(Application, _super);
-
-    function Application() {
-      Application.__super__.constructor.apply(this, arguments);
-    }
-
-    Application.prototype.initialize = function() {
-      this.router = new MainRouter;
-      this.homeView = new HomeView().render();
-      return this;
-    };
-
-    return Application;
-
-  })(BrunchApplication);
-
-  window.app = new exports.Application;
-
-}).call(this);
-
-  }
-}));
-(this.require.define({
   "models/formular": function(exports, require, module) {
     (function() {
   var __hasProp = Object.prototype.hasOwnProperty,
@@ -129,7 +139,8 @@
     };
 
     Formular.prototype.defaults = {
-      formular: 'sin(x)'
+      formular: 'sin(x)',
+      stepSize: 1
     };
 
     Formular.prototype.setFormular = function(formular) {
@@ -190,6 +201,8 @@
 
   FormularFactory = require('views/factories/formular_factory').FormularFactory;
 
+  console.log('FormularFactory: ', FormularFactory);
+
   exports.HomeView = (function(_super) {
 
     __extends(HomeView, _super);
@@ -203,13 +216,11 @@
 
     HomeView.prototype.initialize = function() {
       this.factory = new FormularFactory;
-      this.el = $('#inputs').on('click', 'button', this.render);
-      return this;
+      return this.el = $('#inputs').on('click', 'button', this.render);
     };
 
     HomeView.prototype.render = function() {
-      this.factory.create(this.el.find('ul'));
-      return this;
+      return this.factory.create(this.el.find('ul'));
     };
 
     return HomeView;
@@ -223,13 +234,15 @@
 (this.require.define({
   "views/factories/container": function(exports, require, module) {
     (function() {
-  var Formular, FormularRenderer, InputView,
+  var Formular, FormularLineRenderer, FormularRectRenderer, InputFactory,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-  InputView = require('views/inputs/input').InputView;
+  FormularLineRenderer = require('views/renderer/formular_line').FormularLineRenderer;
 
-  FormularRenderer = require('views/renderer/formular').FormularRenderer;
+  FormularRectRenderer = require('views/renderer/formular_rect').FormularRectRenderer;
+
+  InputFactory = require('views/factories/input_factory').InputFactory;
 
   Formular = require('models/formular').Formular;
 
@@ -245,7 +258,7 @@
       this.el = $(this.el).html(this.template);
       this.inputs = this.el.find('div');
       this.paper = options.paper;
-      this.slider = options.slider;
+      this.inputFactory = new InputFactory();
       options.parent.append(this.el);
       return this.create();
     };
@@ -255,13 +268,15 @@
     Container.prototype.template = '<div/>';
 
     Container.prototype.create = function() {
-      var input, model, output;
+      var model, output,
+        _this = this;
       model = new Formular();
-      output = new FormularRenderer(model, this.paper);
-      return input = new InputView({
-        model: model,
-        parent: this.inputs,
-        slider: this.slider
+      output = new FormularRectRenderer(model, this.paper);
+      return output.inputs.forEach(function(input) {
+        return _this.inputFactory.create(input, {
+          model: model,
+          parent: _this.inputs
+        });
       });
     };
 
@@ -286,13 +301,11 @@
 
     function FormularFactory() {
       this.paper = Raphael('stage', 500, 500);
-      this.slider = new Slider();
       this;
     }
 
     FormularFactory.prototype.create = function(parent) {
       new Container({
-        slider: this.slider,
         parent: parent,
         paper: this.paper
       });
@@ -308,109 +321,37 @@
   }
 }));
 (this.require.define({
-  "views/inputs/input": function(exports, require, module) {
+  "initialize": function(exports, require, module) {
     (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var BrunchApplication, HomeView, MainRouter,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-  exports.InputView = (function(_super) {
+  BrunchApplication = require('helpers').BrunchApplication;
 
-    __extends(InputView, _super);
+  MainRouter = require('routers/main_router').MainRouter;
 
-    function InputView() {
-      this.sliderCallback = __bind(this.sliderCallback, this);
-      this.changeFormular = __bind(this.changeFormular, this);
-      InputView.__super__.constructor.apply(this, arguments);
+  HomeView = require('views/home_view').HomeView;
+
+  exports.Application = (function(_super) {
+
+    __extends(Application, _super);
+
+    function Application() {
+      Application.__super__.constructor.apply(this, arguments);
     }
 
-    InputView.prototype.initialize = function(options) {
-      $(options.parent).append(this.el);
-      this.slider = options.slider;
-      this.el = $(this.el);
-      this.el.html(this.template);
-      this.formularField = this.el.find('input');
+    Application.prototype.initialize = function() {
+      this.router = new MainRouter;
+      this.homeView = new HomeView().render();
       return this;
     };
 
-    InputView.prototype.tagName = 'li';
+    return Application;
 
-    InputView.prototype.template = '<input> <button class="btn btn-small"><i class=" icon-remove\
-"/></button>';
+  })(BrunchApplication);
 
-    InputView.prototype.events = {
-      'keyup': 'changeFormular',
-      'mouseup': 'changeFormular'
-    };
-
-    InputView.prototype.changeFormular = function(event) {
-      this.model.setFormular(this.formularField.val());
-      this.slider.show(this.formularField, this.sliderCallback);
-      return this;
-    };
-
-    InputView.prototype.sliderCallback = function(value) {
-      this.model.setFormular(value);
-      return this.formularField.val(value);
-    };
-
-    return InputView;
-
-  })(Backbone.View);
-
-}).call(this);
-
-  }
-}));
-(this.require.define({
-  "views/renderer/formular": function(exports, require, module) {
-    (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  exports.FormularRenderer = (function() {
-
-    function FormularRenderer(model, paper) {
-      this.model = model;
-      this.paper = paper;
-      this.render = __bind(this.render, this);
-      this.model.bind('change', this.render);
-      this.set = this.paper.set();
-      this;
-    }
-
-    FormularRenderer.prototype.render = function() {
-      var path, point, x, _ref;
-      if (this.path) this.path.remove();
-      path = '';
-      for (x = 0, _ref = this.paper.width; x <= _ref; x += 1) {
-        point = this.createPoint(x);
-        path += point;
-      }
-      this.path = this.paper.path(path);
-      return this;
-    };
-
-    FormularRenderer.prototype.createPoint = function(x) {
-      var y;
-      y = this.calculateY(x);
-      if (typeof y === 'number') {
-        return "" + (x ? 'L' : 'M') + " " + x + " " + y;
-      } else {
-        return '';
-      }
-    };
-
-    FormularRenderer.prototype.calculateY = function(x) {
-      try {
-        return eval(this.model.get('formular').replace('x', x));
-      } catch (e) {
-        return null;
-      }
-    };
-
-    return FormularRenderer;
-
-  })();
+  window.app = new exports.Application;
 
 }).call(this);
 
@@ -497,6 +438,262 @@
     return Slider;
 
   })(Backbone.View);
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "views/inputs/abstractInput": function(exports, require, module) {
+    (function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  exports.AbstractInput = (function(_super) {
+
+    __extends(AbstractInput, _super);
+
+    function AbstractInput() {
+      this.change = __bind(this.change, this);
+      AbstractInput.__super__.constructor.apply(this, arguments);
+    }
+
+    AbstractInput.prototype.initialize = function(options) {
+      this.el = $(this.el).html(this.template);
+      this.input = this.el.find('input');
+      return $(options.parent).append(this.el);
+    };
+
+    AbstractInput.prototype.template = '';
+
+    AbstractInput.prototype.events = {
+      'keyup': 'change',
+      'mouseup': 'change'
+    };
+
+    AbstractInput.prototype.change = function(event) {
+      return this.model.setFormular(this.input.val());
+    };
+
+    return AbstractInput;
+
+  })(Backbone.View);
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "views/inputs/range": function(exports, require, module) {
+    (function() {
+  var AbstractInput,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  AbstractInput = require('views/inputs/abstractInput').AbstractInput;
+
+  exports.Range = (function(_super) {
+
+    __extends(Range, _super);
+
+    function Range() {
+      this.change = __bind(this.change, this);
+      Range.__super__.constructor.apply(this, arguments);
+    }
+
+    Range.prototype.template = '<input type="range" max="10" min="1">';
+
+    Range.prototype.change = function(event) {
+      return this.model.set({
+        stepSize: this.input.val()
+      });
+    };
+
+    return Range;
+
+  })(AbstractInput);
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "views/renderer/abstract_formular": function(exports, require, module) {
+    (function() {
+
+  exports.AbstractFormularRenderer = (function() {
+
+    function AbstractFormularRenderer(model, paper) {
+      this.model = model;
+      this.paper = paper;
+      this.model.bind('change', this.render);
+      this.set = this.paper.set();
+      this;
+    }
+
+    AbstractFormularRenderer.prototype.render = function() {};
+
+    AbstractFormularRenderer.prototype.calculateY = function(x) {
+      try {
+        return eval(this.model.get('formular').replace('x', x));
+      } catch (e) {
+        return null;
+      }
+    };
+
+    return AbstractFormularRenderer;
+
+  })();
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "views/renderer/formular_line": function(exports, require, module) {
+    (function() {
+  var AbstractFormularRenderer,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  AbstractFormularRenderer = require('views/renderer/abstract_formular').AbstractFormularRenderer;
+
+  exports.FormularLineRenderer = (function(_super) {
+
+    __extends(FormularLineRenderer, _super);
+
+    function FormularLineRenderer() {
+      this.render = __bind(this.render, this);
+      FormularLineRenderer.__super__.constructor.apply(this, arguments);
+    }
+
+    FormularLineRenderer.prototype.render = function() {
+      var path, point, stepsize, x, _ref;
+      if (this.path) this.path.remove();
+      path = '';
+      stepsize = this.model.get('stepSize');
+      for (x = 0, _ref = this.paper.width; x <= _ref; x += 1) {
+        point = this.createPoint(x);
+        path += point;
+      }
+      this.path = this.paper.path(path);
+      return this;
+    };
+
+    FormularLineRenderer.prototype.createPoint = function(x) {
+      var y;
+      y = this.calculateY(x);
+      if (typeof y === 'number') {
+        return "" + (x ? 'L' : 'M') + " " + x + " " + y;
+      } else {
+        return '';
+      }
+    };
+
+    return FormularLineRenderer;
+
+  })(AbstractFormularRenderer);
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "views/renderer/formular_rect": function(exports, require, module) {
+    (function() {
+  var AbstractFormularRenderer,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  AbstractFormularRenderer = require('views/renderer/abstract_formular').AbstractFormularRenderer;
+
+  exports.FormularRectRenderer = (function(_super) {
+
+    __extends(FormularRectRenderer, _super);
+
+    function FormularRectRenderer(model, paper) {
+      this.render = __bind(this.render, this);      FormularRectRenderer.__super__.constructor.call(this, model, paper);
+    }
+
+    FormularRectRenderer.prototype.render = function() {
+      var stepsize, x, _ref, _results;
+      this.set.forEach(function(el) {
+        return el.remove();
+      });
+      stepsize = this.model.get('stepSize') * 1;
+      _results = [];
+      for (x = 0, _ref = this.paper.width; 0 <= _ref ? x <= _ref : x >= _ref; x += stepsize) {
+        console.log(x);
+        _results.push(this.drawRect(x));
+      }
+      return _results;
+    };
+
+    FormularRectRenderer.prototype.drawRect = function(x) {
+      var rect, y;
+      y = this.calculateY(x);
+      if (typeof y === 'number') {
+        rect = this.paper.rect(x, y, 10, 10);
+        rect.rotate(45, x + 5, y + 5);
+        return this.set.push(rect);
+      }
+    };
+
+    FormularRectRenderer.prototype.inputs = [
+      {
+        label: 'Rotation',
+        type: 'Range',
+        key: 'rotation'
+      }, {
+        label: 'Formular',
+        type: 'Input',
+        key: 'formular'
+      }
+    ];
+
+    return FormularRectRenderer;
+
+  })(AbstractFormularRenderer);
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "views/factories/input_factory": function(exports, require, module) {
+    (function() {
+  var InputView, Range, Slider;
+
+  InputView = require('views/inputs/input').InputView;
+
+  Range = require('views/inputs/range').Range;
+
+  Slider = require('views/widgets/slider').Slider;
+
+  exports.InputFactory = (function() {
+
+    function InputFactory() {
+      this.slider = new Slider();
+    }
+
+    InputFactory.prototype.create = function(input, options) {
+      options.slider = this.slider;
+      input = new this.inputs[input.type](options);
+      return console.log(input);
+    };
+
+    InputFactory.prototype.inputs = {
+      'Input': InputView,
+      'Range': Range
+    };
+
+    return InputFactory;
+
+  })();
 
 }).call(this);
 

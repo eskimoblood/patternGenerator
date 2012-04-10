@@ -4,6 +4,7 @@ class exports.Formular extends Backbone.Model
 	
     defaults:
         formular: 'sin(x)'
+        stepSize: 1
 
     setFormular: (formular)->
         this.set({formular: @computeFormular(formular)})

@@ -1,26 +1,18 @@
-class exports.InputView extends Backbone.View
+{AbstractInput} = require 'views/inputs/abstractInput'
+
+class exports.InputView extends AbstractInput
     initialize: (options) -> 
-        $(options.parent).append(@el)
+        super(options)
+        console.log @model
         @slider = options.slider
-        @el = $ @el
-        @el.html(@template)
-        @formularField =  @el.find('input')
         @
 
-    tagName: 'li'
+    template: '<input/>'
 
-    template: '<input> <button class="btn btn-small"><i class=" icon-remove
-"/></button>'
-
-    events: 
-        'keyup': 'changeFormular'
-        'mouseup': 'changeFormular'
-
-    changeFormular: (event)=>
-        @model.setFormular @formularField.val()
-        @slider.show(@formularField, @sliderCallback)
-        @ 
+    change: (event)=>
+        super()
+        @slider.show(@input, @sliderCallback)
 
     sliderCallback: (value)=>
         @model.setFormular value
-        @formularField.val(value)
+        @input.val(value)
