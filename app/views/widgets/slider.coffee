@@ -44,10 +44,11 @@ class exports.Slider extends Backbone.View
         @sub2 = value.substring(split).replace /^\d*/, (match) =>
             secondDigit = match
             ''
-        (firstDigit + secondDigit) * 1
+        (firstDigit + secondDigit)
 
     hide: ->
-        $(@el).hide
+        console.log 'hide'
+        $(@el).hide()
 
     calc: =>
         @callback(@sub1 + @slider.val() + @sub2)

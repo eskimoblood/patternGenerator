@@ -69,7 +69,6 @@
 
     InputView.prototype.initialize = function(options) {
       InputView.__super__.initialize.call(this, options);
-      console.log(this.model);
       this.slider = options.slider;
       return this;
     };
@@ -428,11 +427,12 @@
         secondDigit = match;
         return '';
       });
-      return (firstDigit + secondDigit) * 1;
+      return firstDigit + secondDigit;
     };
 
     Slider.prototype.hide = function() {
-      return $(this.el).hide;
+      console.log('hide');
+      return $(this.el).hide();
     };
 
     Slider.prototype.calc = function() {

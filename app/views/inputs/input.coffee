@@ -3,7 +3,6 @@
 class exports.InputView extends AbstractInput
     initialize: (options) -> 
         super(options)
-        console.log @model
         @slider = options.slider
         @
 
