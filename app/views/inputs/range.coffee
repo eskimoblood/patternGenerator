@@ -2,7 +2,10 @@
 
 class exports.Range extends AbstractInput
 
-    template: '<input type="range" max="10" min="1">'
+    template: '<label class="control-label"/><div class="controls"><input type="range" max="100" min="1"></div>'
 
     change: (event)=>
-        @model.set({stepSize: @input.val()})
+        setting = {}
+        setting[@key] = @input.val()
+        console.log setting
+        @model.set(setting)

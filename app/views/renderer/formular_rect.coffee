@@ -9,26 +9,40 @@ class exports.FormularRectRenderer extends AbstractFormularRenderer
         @set.forEach((el) -> el.remove())
 
         stepsize = @model.get('stepSize') * 1
-        for x in [0..@paper.width] by stepsize
-            console.log x
-            @drawRect(x)
+        if stepsize
+            for x in [0..@paper.width] by stepsize
+                @drawRect(x)
 
     drawRect: (x) ->
-        y = @calculateY(x)
+        y = @calculateY('position', x)
+        rotation = @calculateY('rotation', x)
+        width = @calculateY('width', x)
+        height = @calculateY('height', x)
         if typeof y is 'number'
-            rect = @paper.rect x,y, 10, 10
-            rect.rotate 45, x + 5 , y + 5
+            rect = @paper.rect x,y, width, height
+            rect.rotate rotation, x + width / 2 , y + height / 2
             @set.push rect
 
     inputs: [
         
         label: 'Rotation'
-        type: 'Range'
+        type: 'Input'
         key: 'rotation'
     ,
-        
-        label: 'Formular'
+        label: 'StepSize'
         type: 'Input'
-        key: 'formular'
+        key: 'stepSize'    
+    ,
+        label: 'Width'
+        type: 'Input'
+        key: 'width'
+    ,
+        label: 'Height'
+        type: 'Input'
+        key: 'height'
+    ,
+        label: 'Position'
+        type: 'Input'
+        key: 'position'
         
     ]

@@ -2,6 +2,7 @@ class exports.Slider extends Backbone.View
 
     events: 
         'change': 'calc'
+        'mouseup': 'hide'
 
     className: 'tooltip top fade in'
 
@@ -16,11 +17,12 @@ class exports.Slider extends Backbone.View
         @el.hide()
         @slider = $('input', @el);
 
-    show: (input, @callback)->
+    show: (input, @callback) ->
         value = @initValues input
         input = $ input
 
         if $.isNumeric value
+            @slider.attr('max', value + value ).attr('min', 0 )
             width = @helper.html(@sub1).width() + input.position().left - @width / 2 + 5
             @el.css({
                 'top': input.position().top - @height
@@ -30,7 +32,7 @@ class exports.Slider extends Backbone.View
         else 
             @el.hide()
 
-    initValues: (input)->
+    initValues: (input) ->
         value = input.val()
         firstDigit = secondDigit = ''
 
@@ -42,7 +44,7 @@ class exports.Slider extends Backbone.View
         @sub2 = value.substring(split).replace /^\d*/, (match) =>
             secondDigit = match
             ''
-        firstDigit + secondDigit
+        (firstDigit + secondDigit) * 1
 
     hide: ->
         $(@el).hide

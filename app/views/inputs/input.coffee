@@ -7,12 +7,12 @@ class exports.InputView extends AbstractInput
         @slider = options.slider
         @
 
-    template: '<input/>'
+    template: '<div class="control-group"><label class="control-label"/><div class="controls"><input/></div></div>'
 
     change: (event)=>
         super()
         @slider.show(@input, @sliderCallback)
 
     sliderCallback: (value)=>
-        @model.setFormular value
+        @model.setFormular @key, value
         @input.val(value)

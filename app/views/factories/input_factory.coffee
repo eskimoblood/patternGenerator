@@ -9,8 +9,9 @@ class exports.InputFactory
 
     create: (input, options) ->
         options.slider = @slider
+        options.label = input.label
+        options.key = input.key
         input = new @inputs[input.type](options)
-        console.log input
 
     inputs: 
         'Input': InputView

@@ -74,7 +74,7 @@
       return this;
     };
 
-    InputView.prototype.template = '<input/>';
+    InputView.prototype.template = '<div class="control-group"><label class="control-label"/><div class="controls"><input/></div></div>';
 
     InputView.prototype.change = function(event) {
       InputView.__super__.change.call(this);
@@ -82,7 +82,7 @@
     };
 
     InputView.prototype.sliderCallback = function(value) {
-      this.model.setFormular(value);
+      this.model.setFormular(this.key, value);
       return this.input.val(value);
     };
 
@@ -143,10 +143,12 @@
       stepSize: 1
     };
 
-    Formular.prototype.setFormular = function(formular) {
-      return this.set({
-        formular: this.computeFormular(formular)
-      });
+    Formular.prototype.setFormular = function(key, formular) {
+      var set;
+      console.log(key, formular);
+      set = {};
+      set[key] = this.computeFormular(formular);
+      return this.set(set);
     };
 
     Formular.prototype.computeFormular = function(formular) {
@@ -374,7 +376,8 @@
     }
 
     Slider.prototype.events = {
-      'change': 'calc'
+      'change': 'calc',
+      'mouseup': 'hide'
     };
 
     Slider.prototype.className = 'tooltip top fade in';
@@ -399,6 +402,7 @@
       value = this.initValues(input);
       input = $(input);
       if ($.isNumeric(value)) {
+        this.slider.attr('max', value + value).attr('min', 0);
         width = this.helper.html(this.sub1).width() + input.position().left - this.width / 2 + 5;
         this.el.css({
           'top': input.position().top - this.height,
@@ -424,7 +428,7 @@
         secondDigit = match;
         return '';
       });
-      return firstDigit + secondDigit;
+      return (firstDigit + secondDigit) * 1;
     };
 
     Slider.prototype.hide = function() {
@@ -462,7 +466,10 @@
     AbstractInput.prototype.initialize = function(options) {
       this.el = $(this.el).html(this.template);
       this.input = this.el.find('input');
-      return $(options.parent).append(this.el);
+      $(options.parent).append(this.el);
+      this.setLabel(options);
+      this.key = options.key;
+      return console.log(options);
     };
 
     AbstractInput.prototype.template = '';
@@ -473,7 +480,18 @@
     };
 
     AbstractInput.prototype.change = function(event) {
-      return this.model.setFormular(this.input.val());
+      return this.model.setFormular(this.key, this.input.val());
+    };
+
+    AbstractInput.prototype.setLabel = function(options) {
+      var cid, label;
+      label = this.el.find('label');
+      if (label) {
+        cid = _.uniqueId('x');
+        label.attr('for', cid);
+        this.input.attr('id', cid);
+        return label.html(options.label);
+      }
     };
 
     return AbstractInput;
@@ -503,12 +521,14 @@
       Range.__super__.constructor.apply(this, arguments);
     }
 
-    Range.prototype.template = '<input type="range" max="10" min="1">';
+    Range.prototype.template = '<label class="control-label"/><div class="controls"><input type="range" max="100" min="1"></div>';
 
     Range.prototype.change = function(event) {
-      return this.model.set({
-        stepSize: this.input.val()
-      });
+      var setting;
+      setting = {};
+      setting[this.key] = this.input.val();
+      console.log(setting);
+      return this.model.set(setting);
     };
 
     return Range;
@@ -535,9 +555,9 @@
 
     AbstractFormularRenderer.prototype.render = function() {};
 
-    AbstractFormularRenderer.prototype.calculateY = function(x) {
+    AbstractFormularRenderer.prototype.calculateY = function(key, x) {
       try {
-        return eval(this.model.get('formular').replace('x', x));
+        return eval(this.model.get(key).replace('x', x));
       } catch (e) {
         return null;
       }
@@ -625,20 +645,24 @@
         return el.remove();
       });
       stepsize = this.model.get('stepSize') * 1;
-      _results = [];
-      for (x = 0, _ref = this.paper.width; 0 <= _ref ? x <= _ref : x >= _ref; x += stepsize) {
-        console.log(x);
-        _results.push(this.drawRect(x));
+      if (stepsize) {
+        _results = [];
+        for (x = 0, _ref = this.paper.width; 0 <= _ref ? x <= _ref : x >= _ref; x += stepsize) {
+          _results.push(this.drawRect(x));
+        }
+        return _results;
       }
-      return _results;
     };
 
     FormularRectRenderer.prototype.drawRect = function(x) {
-      var rect, y;
-      y = this.calculateY(x);
+      var height, rect, rotation, width, y;
+      y = this.calculateY('position', x);
+      rotation = this.calculateY('rotation', x);
+      width = this.calculateY('width', x);
+      height = this.calculateY('height', x);
       if (typeof y === 'number') {
-        rect = this.paper.rect(x, y, 10, 10);
-        rect.rotate(45, x + 5, y + 5);
+        rect = this.paper.rect(x, y, width, height);
+        rect.rotate(rotation, x + width / 2, y + height / 2);
         return this.set.push(rect);
       }
     };
@@ -646,12 +670,24 @@
     FormularRectRenderer.prototype.inputs = [
       {
         label: 'Rotation',
-        type: 'Range',
+        type: 'Input',
         key: 'rotation'
       }, {
-        label: 'Formular',
+        label: 'StepSize',
         type: 'Input',
-        key: 'formular'
+        key: 'stepSize'
+      }, {
+        label: 'Width',
+        type: 'Input',
+        key: 'width'
+      }, {
+        label: 'Height',
+        type: 'Input',
+        key: 'height'
+      }, {
+        label: 'Position',
+        type: 'Input',
+        key: 'position'
       }
     ];
 
@@ -682,8 +718,9 @@
 
     InputFactory.prototype.create = function(input, options) {
       options.slider = this.slider;
-      input = new this.inputs[input.type](options);
-      return console.log(input);
+      options.label = input.label;
+      options.key = input.key;
+      return input = new this.inputs[input.type](options);
     };
 
     InputFactory.prototype.inputs = {

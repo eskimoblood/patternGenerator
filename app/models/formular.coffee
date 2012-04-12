@@ -6,8 +6,11 @@ class exports.Formular extends Backbone.Model
         formular: 'sin(x)'
         stepSize: 1
 
-    setFormular: (formular)->
-        this.set({formular: @computeFormular(formular)})
+    setFormular: (key, formular) ->
+        console.log key, formular
+        set = {}
+        set[key] = @computeFormular formular
+        this.set set
 
     computeFormular: (formular)->
         formular.replace new RegExp(@mathMember, 'g'),  (match)->

@@ -8,8 +8,8 @@ class exports.AbstractFormularRenderer
     render: ->
 
 
-    calculateY: (x)->
+    calculateY: (key, x)->
         try
-            eval(@model.get('formular').replace('x', x))
+            eval(@model.get(key).replace('x', x))
         catch e            
             null
