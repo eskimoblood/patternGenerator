@@ -24,5 +24,3 @@ class exports.Container extends Backbone.View
         output.inputs.forEach((input) => 
             @inputFactory.create(input, {model: model, parent: @inputs})
         )
-        # input = new InputView {model: model, parent: @inputs, slider: @slider}
-        # input = new Range {model: model, parent: @inputs}

@@ -468,8 +468,7 @@
       this.input = this.el.find('input');
       $(options.parent).append(this.el);
       this.setLabel(options);
-      this.key = options.key;
-      return console.log(options);
+      return this.key = options.key;
     };
 
     AbstractInput.prototype.template = '';
@@ -527,7 +526,6 @@
       var setting;
       setting = {};
       setting[this.key] = this.input.val();
-      console.log(setting);
       return this.model.set(setting);
     };
 

@@ -7,5 +7,4 @@ class exports.Range extends AbstractInput
     change: (event)=>
         setting = {}
         setting[@key] = @input.val()
-        console.log setting
         @model.set(setting)

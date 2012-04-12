@@ -6,7 +6,6 @@ class exports.AbstractInput extends Backbone.View
         $(options.parent).append(@el)
         @setLabel options
         @key = options.key
-        console.log options
 
     template: ''
 
