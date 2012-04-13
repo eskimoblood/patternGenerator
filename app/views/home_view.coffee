@@ -1,6 +1,5 @@
 {FormularFactory} = require 'views/factories/formular_factory'
 
-console.log 'FormularFactory: ', FormularFactory
 class exports.HomeView extends Backbone.View
 
     tagName: 'div'

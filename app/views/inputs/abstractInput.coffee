@@ -14,6 +14,7 @@ class exports.AbstractInput extends Backbone.View
         'mouseup': 'change'
 
     change: (event) =>
+        console.log @input.val() 
         @model.setFormular @key, @input.val() 
 
     setLabel: (options) ->

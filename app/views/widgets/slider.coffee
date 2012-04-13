@@ -18,7 +18,7 @@ class exports.Slider extends Backbone.View
         @slider = $('input', @el);
 
     show: (input, @callback) ->
-        value = @initValues input
+        value = parseFloat @initValues input
         input = $ input
 
         if $.isNumeric value
@@ -47,7 +47,6 @@ class exports.Slider extends Backbone.View
         (firstDigit + secondDigit)
 
     hide: ->
-        console.log 'hide'
         $(@el).hide()
 
     calc: =>

@@ -18,9 +18,11 @@ class exports.FormularRectRenderer extends AbstractFormularRenderer
         rotation = @calculateY('rotation', x)
         width = @calculateY('width', x)
         height = @calculateY('height', x)
+        stroke = {'stroke':  '#' + @model.get('color')}
         if typeof y is 'number'
             rect = @paper.rect x,y, width, height
             rect.rotate rotation, x + width / 2 , y + height / 2
+            rect.attr(stroke)
             @set.push rect
 
     inputs: [
@@ -44,5 +46,9 @@ class exports.FormularRectRenderer extends AbstractFormularRenderer
         label: 'Position'
         type: 'Input'
         key: 'position'
+    ,
+        label: 'Color'
+        type: 'Color'
+        key: 'color'
         
     ]

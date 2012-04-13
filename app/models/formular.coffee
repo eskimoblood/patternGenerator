@@ -7,7 +7,6 @@ class exports.Formular extends Backbone.Model
         stepSize: 1
 
     setFormular: (key, formular) ->
-        console.log key, formular
         set = {}
         set[key] = @computeFormular formular
         this.set set

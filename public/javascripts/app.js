@@ -48,46 +48,88 @@
     };
   }
 }).call(this);(this.require.define({
-  "views/inputs/input": function(exports, require, module) {
+  "views/widgets/slider": function(exports, require, module) {
     (function() {
-  var AbstractInput,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-  AbstractInput = require('views/inputs/abstractInput').AbstractInput;
+  exports.Slider = (function(_super) {
 
-  exports.InputView = (function(_super) {
+    __extends(Slider, _super);
 
-    __extends(InputView, _super);
-
-    function InputView() {
-      this.sliderCallback = __bind(this.sliderCallback, this);
-      this.change = __bind(this.change, this);
-      InputView.__super__.constructor.apply(this, arguments);
+    function Slider() {
+      this.calc = __bind(this.calc, this);
+      Slider.__super__.constructor.apply(this, arguments);
     }
 
-    InputView.prototype.initialize = function(options) {
-      InputView.__super__.initialize.call(this, options);
-      this.slider = options.slider;
-      return this;
+    Slider.prototype.events = {
+      'change': 'calc',
+      'mouseup': 'hide'
     };
 
-    InputView.prototype.template = '<div class="control-group"><label class="control-label"/><div class="controls"><input/></div></div>';
+    Slider.prototype.className = 'tooltip top fade in';
 
-    InputView.prototype.change = function(event) {
-      InputView.__super__.change.call(this);
-      return this.slider.show(this.input, this.sliderCallback);
+    Slider.prototype.initialize = function() {
+      this.el = $(this.el).html('<div class="tooltip-arrow"></div><div class="tooltip-inner"><input type="range"/></div>');
+      this.helper = $('<div>').css({
+        top: '-10000px',
+        position: 'absolute'
+      });
+      $('body').append(this.el);
+      $('body').append(this.helper);
+      this.height = this.el.height();
+      this.width = this.el.width();
+      this.el.hide();
+      return this.slider = $('input', this.el);
     };
 
-    InputView.prototype.sliderCallback = function(value) {
-      this.model.setFormular(this.key, value);
-      return this.input.val(value);
+    Slider.prototype.show = function(input, callback) {
+      var value, width;
+      this.callback = callback;
+      value = parseFloat(this.initValues(input));
+      input = $(input);
+      if ($.isNumeric(value)) {
+        this.slider.attr('max', value + value).attr('min', 0);
+        width = this.helper.html(this.sub1).width() + input.position().left - this.width / 2 + 5;
+        this.el.css({
+          'top': input.position().top - this.height,
+          'left': width
+        }).show();
+        return this.slider.val(value);
+      } else {
+        return this.el.hide();
+      }
     };
 
-    return InputView;
+    Slider.prototype.initValues = function(input) {
+      var firstDigit, secondDigit, split, value,
+        _this = this;
+      value = input.val();
+      firstDigit = secondDigit = '';
+      split = input.get(0).selectionStart;
+      this.sub1 = value.substring(0, split).replace(/\d*$/, function(match) {
+        firstDigit = match;
+        return '';
+      });
+      this.sub2 = value.substring(split).replace(/^\d*/, function(match) {
+        secondDigit = match;
+        return '';
+      });
+      return firstDigit + secondDigit;
+    };
 
-  })(AbstractInput);
+    Slider.prototype.hide = function() {
+      return $(this.el).hide();
+    };
+
+    Slider.prototype.calc = function() {
+      return this.callback(this.sub1 + this.slider.val() + this.sub2);
+    };
+
+    return Slider;
+
+  })(Backbone.View);
 
 }).call(this);
 
@@ -144,7 +186,6 @@
 
     Formular.prototype.setFormular = function(key, formular) {
       var set;
-      console.log(key, formular);
       set = {};
       set[key] = this.computeFormular(formular);
       return this.set(set);
@@ -201,8 +242,6 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
   FormularFactory = require('views/factories/formular_factory').FormularFactory;
-
-  console.log('FormularFactory: ', FormularFactory);
 
   exports.HomeView = (function(_super) {
 
@@ -322,6 +361,52 @@
   }
 }));
 (this.require.define({
+  "views/inputs/input": function(exports, require, module) {
+    (function() {
+  var AbstractInput,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  AbstractInput = require('views/inputs/abstractInput').AbstractInput;
+
+  exports.InputView = (function(_super) {
+
+    __extends(InputView, _super);
+
+    function InputView() {
+      this.sliderCallback = __bind(this.sliderCallback, this);
+      this.change = __bind(this.change, this);
+      InputView.__super__.constructor.apply(this, arguments);
+    }
+
+    InputView.prototype.initialize = function(options) {
+      InputView.__super__.initialize.call(this, options);
+      this.slider = options.slider;
+      return this;
+    };
+
+    InputView.prototype.template = '<div class="control-group"><label class="control-label"/><div class="controls"><input/></div></div>';
+
+    InputView.prototype.change = function(event) {
+      InputView.__super__.change.call(this);
+      return this.slider.show(this.input, this.sliderCallback);
+    };
+
+    InputView.prototype.sliderCallback = function(value) {
+      this.model.setFormular(this.key, value);
+      return this.input.val(value);
+    };
+
+    return InputView;
+
+  })(AbstractInput);
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
   "initialize": function(exports, require, module) {
     (function() {
   var BrunchApplication, HomeView, MainRouter,
@@ -359,95 +444,6 @@
   }
 }));
 (this.require.define({
-  "views/widgets/slider": function(exports, require, module) {
-    (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = Object.prototype.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
-  exports.Slider = (function(_super) {
-
-    __extends(Slider, _super);
-
-    function Slider() {
-      this.calc = __bind(this.calc, this);
-      Slider.__super__.constructor.apply(this, arguments);
-    }
-
-    Slider.prototype.events = {
-      'change': 'calc',
-      'mouseup': 'hide'
-    };
-
-    Slider.prototype.className = 'tooltip top fade in';
-
-    Slider.prototype.initialize = function() {
-      this.el = $(this.el).html('<div class="tooltip-arrow"></div><div class="tooltip-inner"><input type="range"/></div>');
-      this.helper = $('<div>').css({
-        top: '-10000px',
-        position: 'absolute'
-      });
-      $('body').append(this.el);
-      $('body').append(this.helper);
-      this.height = this.el.height();
-      this.width = this.el.width();
-      this.el.hide();
-      return this.slider = $('input', this.el);
-    };
-
-    Slider.prototype.show = function(input, callback) {
-      var value, width;
-      this.callback = callback;
-      value = this.initValues(input);
-      input = $(input);
-      if ($.isNumeric(value)) {
-        this.slider.attr('max', value + value).attr('min', 0);
-        width = this.helper.html(this.sub1).width() + input.position().left - this.width / 2 + 5;
-        this.el.css({
-          'top': input.position().top - this.height,
-          'left': width
-        }).show();
-        return this.slider.val(value);
-      } else {
-        return this.el.hide();
-      }
-    };
-
-    Slider.prototype.initValues = function(input) {
-      var firstDigit, secondDigit, split, value,
-        _this = this;
-      value = input.val();
-      firstDigit = secondDigit = '';
-      split = input.get(0).selectionStart;
-      this.sub1 = value.substring(0, split).replace(/\d*$/, function(match) {
-        firstDigit = match;
-        return '';
-      });
-      this.sub2 = value.substring(split).replace(/^\d*/, function(match) {
-        secondDigit = match;
-        return '';
-      });
-      return firstDigit + secondDigit;
-    };
-
-    Slider.prototype.hide = function() {
-      console.log('hide');
-      return $(this.el).hide();
-    };
-
-    Slider.prototype.calc = function() {
-      return this.callback(this.sub1 + this.slider.val() + this.sub2);
-    };
-
-    return Slider;
-
-  })(Backbone.View);
-
-}).call(this);
-
-  }
-}));
-(this.require.define({
   "views/inputs/abstractInput": function(exports, require, module) {
     (function() {
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -479,6 +475,7 @@
     };
 
     AbstractInput.prototype.change = function(event) {
+      console.log(this.input.val());
       return this.model.setFormular(this.key, this.input.val());
     };
 
@@ -653,14 +650,18 @@
     };
 
     FormularRectRenderer.prototype.drawRect = function(x) {
-      var height, rect, rotation, width, y;
+      var height, rect, rotation, stroke, width, y;
       y = this.calculateY('position', x);
       rotation = this.calculateY('rotation', x);
       width = this.calculateY('width', x);
       height = this.calculateY('height', x);
+      stroke = {
+        'stroke': '#' + this.model.get('color')
+      };
       if (typeof y === 'number') {
         rect = this.paper.rect(x, y, width, height);
         rect.rotate(rotation, x + width / 2, y + height / 2);
+        rect.attr(stroke);
         return this.set.push(rect);
       }
     };
@@ -686,6 +687,10 @@
         label: 'Position',
         type: 'Input',
         key: 'position'
+      }, {
+        label: 'Color',
+        type: 'Color',
+        key: 'color'
       }
     ];
 
@@ -700,9 +705,11 @@
 (this.require.define({
   "views/factories/input_factory": function(exports, require, module) {
     (function() {
-  var InputView, Range, Slider;
+  var ColorView, InputView, Range, Slider;
 
   InputView = require('views/inputs/input').InputView;
+
+  ColorView = require('views/inputs/color').ColorView;
 
   Range = require('views/inputs/range').Range;
 
@@ -711,6 +718,7 @@
   exports.InputFactory = (function() {
 
     function InputFactory() {
+      console.log(this.inputs);
       this.slider = new Slider();
     }
 
@@ -723,12 +731,49 @@
 
     InputFactory.prototype.inputs = {
       'Input': InputView,
-      'Range': Range
+      'Range': Range,
+      'Color': ColorView
     };
 
     return InputFactory;
 
   })();
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "views/inputs/color": function(exports, require, module) {
+    (function() {
+  var AbstractInput,
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  AbstractInput = require('views/inputs/abstractInput').AbstractInput;
+
+  exports.ColorView = (function(_super) {
+
+    __extends(ColorView, _super);
+
+    function ColorView() {
+      ColorView.__super__.constructor.apply(this, arguments);
+    }
+
+    ColorView.prototype.initialize = function(options) {
+      ColorView.__super__.initialize.call(this, options);
+      return this.colorPicker = new jscolor.color(this.input.get(0), {});
+    };
+
+    ColorView.prototype.template = '<div class="control-group"><label class="control-label"/><div class="controls"><input/></div></div>';
+
+    ColorView.prototype.events = {
+      'change': 'change'
+    };
+
+    return ColorView;
+
+  })(AbstractInput);
 
 }).call(this);
 
