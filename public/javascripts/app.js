@@ -248,7 +248,7 @@
     __extends(HomeView, _super);
 
     function HomeView() {
-      this.render = __bind(this.render, this);
+      this.add = __bind(this.add, this);
       HomeView.__super__.constructor.apply(this, arguments);
     }
 
@@ -256,10 +256,10 @@
 
     HomeView.prototype.initialize = function() {
       this.factory = new FormularFactory;
-      return this.el = $('#inputs').on('click', 'button', this.render);
+      return this.el = $('#inputs').on('click', 'icon-plus', this.add);
     };
 
-    HomeView.prototype.render = function() {
+    HomeView.prototype.add = function() {
       return this.factory.create(this.el.find('ul'));
     };
 
@@ -331,16 +331,21 @@
 (this.require.define({
   "views/factories/formular_factory": function(exports, require, module) {
     (function() {
-  var Container, Slider;
+  var Container, Save, Slider;
 
   Slider = require('views/widgets/slider').Slider;
 
   Container = require('views/factories/container').Container;
 
+  Save = require('views/widgets/save').Save;
+
   exports.FormularFactory = (function() {
 
     function FormularFactory() {
+      var save;
       this.paper = Raphael('stage', 500, 500);
+      save = new Save(this.paper);
+      console.log(save);
       this;
     }
 
@@ -429,7 +434,7 @@
 
     Application.prototype.initialize = function() {
       this.router = new MainRouter;
-      this.homeView = new HomeView().render();
+      this.homeView = new HomeView().add();
       return this;
     };
 
@@ -774,6 +779,40 @@
     return ColorView;
 
   })(AbstractInput);
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "views/widgets/save": function(exports, require, module) {
+    (function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  exports.Save = (function() {
+
+    function Save(paper) {
+      this.paper = paper;
+      this.save = __bind(this.save, this);
+      $('#save').click(this.save);
+    }
+
+    Save.prototype.save = function() {
+      var a, bb, blob, svgString;
+      svgString = this.paper.toSVG();
+      a = document.createElement('a');
+      a.download = 'mySvg.svg';
+      a.type = 'image/svg+xml';
+      bb = new (window.BlobBuilder || WebKitBlobBuilder);
+      bb.append(svgString);
+      blob = bb.getBlob('image/svg+xml');
+      a.href = (window.URL || webkitURL).createObjectURL(blob);
+      return a.click();
+    };
+
+    return Save;
+
+  })();
 
 }).call(this);
 

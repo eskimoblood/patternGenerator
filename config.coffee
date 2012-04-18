@@ -24,8 +24,8 @@ exports.config =
           'vendor/scripts/underscore-1.3.1.js',
           'vendor/scripts/backbone-0.9.1.js',
           'vendor/scripts/raphael.js'
+          'vendor/scripts/raphael.export.js'
           'vendor/scripts/jscolor.js'
-
         ]
 
     stylesheets:
