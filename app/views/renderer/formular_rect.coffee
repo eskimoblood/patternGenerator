@@ -2,9 +2,6 @@
 
 class exports.FormularRectRenderer extends AbstractFormularRenderer
 
-    constructor: (model, paper)->
-        super model, paper
-
     render: => 
         @set.forEach((el) -> el.remove())
 
@@ -13,42 +10,53 @@ class exports.FormularRectRenderer extends AbstractFormularRenderer
             for x in [0..@paper.width] by stepsize
                 @drawRect(x)
 
-    drawRect: (x) ->
-        y = @calculateY('position', x)
-        rotation = @calculateY('rotation', x)
-        width = @calculateY('width', x)
-        height = @calculateY('height', x)
+    drawRect: (t) ->
+        x = @calculate('positionX', t)
+        y = @calculate('positionY', t)
+        rotation = @calculate('rotation', t)
+        width = @calculate('width', t)
+        height = @calculate('height', t)
         stroke = {'stroke':  '#' + @model.get('color')}
-        if typeof y is 'number'
-            rect = @paper.rect x,y, width, height
+        if typeof y is 'number' and typeof x is 'number'
+            rect = @paper.rect x, y, width, height
             rect.rotate rotation, x + width / 2 , y + height / 2
             rect.attr(stroke)
             @set.push rect
 
     inputs: [
         
-        label: 'Rotation'
+        label: 'icon-repeat'
         type: 'Input'
         key: 'rotation'
+        size:'span2'
     ,
-        label: 'StepSize'
-        type: 'Input'
-        key: 'stepSize'    
-    ,
-        label: 'Width'
+        label: 'icon-resize-horizontal'
         type: 'Input'
         key: 'width'
+        size:'span2'
     ,
-        label: 'Height'
+        label: 'icon-resize-vertical'
         type: 'Input'
         key: 'height'
+        size:'span2'
     ,
-        label: 'Position'
+        label: 'icon-map-marker'
         type: 'Input'
-        key: 'position'
+        key: 'positionY'
+        size:'span2'    
     ,
-        label: 'Color'
+        label: 'icon-map-marker'
+        type: 'Input'
+        key: 'positionX'
+        size:'span2'
+    ,
+        label: 'icon-arrow-right'
+        type: 'Input'
+        key: 'stepSize' 
+        size:'span1'   
+    ,
+        label: 'icon-tint'
         type: 'Color'
         key: 'color'
-        
+        size:'span1'
     ]

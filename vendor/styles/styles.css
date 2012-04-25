@@ -7,3 +7,17 @@ body {
     width: 150px;
     margin: 0;
 }
+
+.left {
+    float: left;
+}
+
+.form-inline .input-prepend {
+    margin: 0px 5px 10px;
+    float: left;
+}
+
+.form-inline .input-prepend .span2{
+    width: 147px;
+}
+

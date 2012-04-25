@@ -6,7 +6,7 @@ class exports.HomeView extends Backbone.View
 
     initialize: ->
         @factory = new FormularFactory
-        @el = $('#inputs').on('click', 'icon-plus', @add)
+        @el = $('#inputs').on('click', '.icon-plus', @add)
 
     add: =>
         @factory.create @el.find('ul')

@@ -5,7 +5,8 @@ class exports.ColorView extends AbstractInput
         super(options)
         @colorPicker = new jscolor.color(@input.get(0), {})
 
-    template: '<div class="control-group"><label class="control-label"/><div class="controls"><input/></div></div>'
+    template: '<div class="input-prepend"><span class="add-on"><i/></span><input
+        /></div>'
 
     events: 
         'change': 'change'

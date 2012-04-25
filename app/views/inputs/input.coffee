@@ -6,7 +6,7 @@ class exports.InputView extends AbstractInput
         @slider = options.slider
         @
 
-    template: '<div class="control-group"><label class="control-label"/><div class="controls"><input/></div></div>'
+    template: '<div class="input-prepend"><span class="add-on"><i/></span><input/></div>'
 
     change: (event)=>
         super()

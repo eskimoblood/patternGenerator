@@ -17426,6 +17426,235 @@ window.Raphael.vml && function (R) {
         })(method);
     }
 }(window.Raphael);/**
+ * Raphael.Export https://github.com/ElbertF/Raphael.Export
+ *
+ * Licensed under the MIT license:
+ * http://www.opensource.org/licenses/mit-license.php
+ *
+ */
+
+(function(R) {
+    /**
+    * Escapes string for XML interpolation
+    * @param value string or number value to escape
+    * @returns string escaped
+    */
+    function escapeXML(s) {
+        if ( typeof s === 'number' ) return s.toString();
+
+        var replace = { '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot', '\'': 'apos' };
+
+        for ( var entity in replace ) {
+            s = s.replace(new RegExp(entity, 'g'), '&' + replace[entity] + ';');
+        }
+
+        return s;
+    }
+
+    /**
+    * Generic map function
+    * @param iterable the array or object to be mapped
+    * @param callback the callback function(element, key)
+    * @returns array
+    */
+    function map(iterable, callback) {
+        var mapped = new Array;
+
+        for ( var i in iterable ) {
+            if ( iterable.hasOwnProperty(i) ) {
+                var value = callback.call(this, iterable[i], i);
+
+                if ( value !== null ) mapped.push(value);
+            }
+        }
+
+        return mapped;
+    }
+
+    /**
+    * Generic reduce function
+    * @param iterable array or object to be reduced
+    * @param callback the callback function(initial, element, i)
+    * @param initial the initial value
+    * @return the reduced value
+    */
+    function reduce(iterable, callback, initial) {
+        for ( var i in iterable ) {
+            if ( iterable.hasOwnProperty(i) ) {
+                initial = callback.call(this, initial, iterable[i], i);
+            }
+        }
+
+        return initial;
+    }
+
+    /**
+    * Utility method for creating a tag
+    * @param name the tag name, e.g., 'text'
+    * @param attrs the attribute string, e.g., name1="val1" name2="val2"
+    * or attribute map, e.g., { name1 : 'val1', name2 : 'val2' }
+    * @param content the content string inside the tag
+    * @returns string of the tag
+    */
+    function tag(name, attrs, matrix, content) {
+        if ( typeof content === 'undefined' || content === null ) {
+            content = '';
+        }
+
+        if ( typeof attrs === 'object' ) {
+            attrs = map(attrs, function(element, name) {
+                if ( name === 'transform') return;
+
+                return name + '="' + escapeXML(element) + '"';
+            }).join(' ');
+        }
+
+        return '<' + name + ( matrix ? ' transform="matrix(' + matrix.toString().replace(/^matrix\(|\)$/g, '') + ')" ' : ' ' ) + attrs + '>' +  content + '</' + name + '>';
+    }
+
+    /**
+    * @return object the style object
+    */
+    function extractStyle(node) {
+        return {
+            font: {
+                family: node.attrs.font.replace(/^.*?"(\w+)".*$/, '$1'),
+                size:   typeof node.attrs['font-size'] === 'undefined' ? null : node.attrs['font-size']
+                }
+            };
+    }
+
+    /**
+    * @param style object from style()
+    * @return string
+    */
+    function styleToString(style) {
+        // TODO figure out what is 'normal'
+        return 'font: normal normal normal 10px/normal ' + style.font.family + ( style.font.size === null ? '' : '; font-size: ' + style.font.size + 'px' );
+    }
+
+    /**
+    * Computes tspan dy using font size. This formula was empircally determined
+    * using a best-fit line. Works well in both VML and SVG browsers.
+    * @param fontSize number
+    * @return number
+    */
+    function computeTSpanDy(fontSize, line, lines) {
+        if ( fontSize === null ) fontSize = 10;
+
+        //return fontSize * 4.5 / 13
+        return fontSize * 4.5 / 13 * ( line - .2 - lines / 2 ) * 3.5;
+    }
+
+    var serializer = {
+        'text': function(node) {
+            style = extractStyle(node);
+
+            var tags = new Array;
+
+            map(node.attrs['text'].split('\n'), function(text, iterable, line) {
+                tags.push(tag(
+                    'text',
+                    reduce(
+                        node.attrs,
+                        function(initial, value, name) {
+                            if ( name !== 'text' && name !== 'w' && name !== 'h' ) {
+                                if ( name === 'font-size') value = value + 'px';
+
+                                initial[name] = escapeXML(value.toString());
+                            }
+
+                            return initial;
+                        },
+                        { style: 'text-anchor: middle; ' + styleToString(style) + ';' }
+                        ),
+                    node.matrix,
+                    tag('tspan', { dy: computeTSpanDy(style.font.size, line + 1, node.attrs['text'].split('\n').length) }, null, text)
+                ));
+            });
+
+            return tags;
+        },
+        'path' : function(node) {
+            var initial = ( node.matrix.a === 1 && node.matrix.d === 1 ) ? {} : { 'transform' : node.matrix.toString() };
+
+            return tag(
+                'path',
+                reduce(
+                    node.attrs,
+                    function(initial, value, name) {
+                        if ( name === 'path' ) name = 'd';
+
+                        initial[name] = value.toString();
+
+                        return initial;
+                    },
+                    {}
+                ),
+                node.matrix
+                );
+        }
+        // Other serializers should go here
+    };
+
+    R.fn.toSVG = function() {
+        var
+            paper   = this,
+            restore = { svg: R.svg, vml: R.vml },
+            svg     = '<svg style="overflow: hidden; position: relative;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="' + paper.width + '" version="1.1" height="' + paper.height + '">'
+            ;
+
+        R.svg = true;
+        R.vml = false;
+
+        for ( var node = paper.bottom; node != null; node = node.next ) {
+            if ( node.node.style.display === 'none' ) continue;
+
+            var attrs = '';
+
+            // Use serializer
+            if ( typeof serializer[node.type] === 'function' ) {
+                svg += serializer[node.type](node);
+
+                continue;
+            }
+
+            switch ( node.type ) {
+                case 'image':
+                    attrs += ' preserveAspectRatio="none"';
+                    break;
+            }
+
+            for ( i in node.attrs ) {
+                var name = i;
+
+                switch ( i ) {
+                    case 'src':
+                        name = 'xlink:href';
+
+                        break;
+                    case 'transform':
+                        name = '';
+
+                        break;
+                }
+
+                if ( name ) {
+                    attrs += ' ' + name + '="' + escapeXML(node.attrs[i].toString()) + '"';
+                }
+            }
+
+            svg += '<' + node.type + ' transform="matrix(' + node.matrix.toString().replace(/^matrix\(|\)$/g, '') + ')"' + attrs + '></' + node.type + '>';
+        }
+
+        svg += '</svg>';
+
+        R.svg = restore.svg;
+        R.vml = restore.vml;
+
+        return svg;
+    };
+})(window.Raphael);/**
  * jscolor, JavaScript Color Picker
  *
  * @version 1.3.13
@@ -18361,232 +18590,130 @@ var jscolor = {
 
 jscolor.install();
 /**
- * Raphael.Export https://github.com/ElbertF/Raphael.Export
- *
- * Licensed under the MIT license:
- * http://www.opensource.org/licenses/mit-license.php
- *
+ * Backbone localStorage Adapter
+ * https://github.com/jeromegn/Backbone.localStorage
  */
 
-(function(R) {
-    /**
-    * Escapes string for XML interpolation
-    * @param value string or number value to escape
-    * @returns string escaped
-    */
-    function escapeXML(s) {
-        if ( typeof s === 'number' ) return s.toString();
+(function() {
+// A simple module to replace `Backbone.sync` with *localStorage*-based
+// persistence. Models are given GUIDS, and saved into a JSON object. Simple
+// as that.
 
-        var replace = { '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot', '\'': 'apos' };
+// Generate four random hex digits.
+function S4() {
+   return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+};
 
-        for ( var entity in replace ) {
-            s = s.replace(new RegExp(entity, 'g'), '&' + replace[entity] + ';');
-        }
+// Generate a pseudo-GUID by concatenating random hexadecimal.
+function guid() {
+   return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+};
 
-        return s;
-    }
+// Our Store is represented by a single JS object in *localStorage*. Create it
+// with a meaningful name, like the name you'd give a table.
+// window.Store is deprectated, use Backbone.LocalStorage instead
+Backbone.LocalStorage = window.Store = function(name) {
+  this.name = name;
+  var store = this.localStorage().getItem(this.name);
+  this.records = (store && store.split(",")) || [];
+};
 
-    /**
-    * Generic map function
-    * @param iterable the array or object to be mapped
-    * @param callback the callback function(element, key)
-    * @returns array
-    */
-    function map(iterable, callback) {
-        var mapped = new Array;
+_.extend(Backbone.LocalStorage.prototype, {
 
-        for ( var i in iterable ) {
-            if ( iterable.hasOwnProperty(i) ) {
-                var value = callback.call(this, iterable[i], i);
+  // Save the current state of the **Store** to *localStorage*.
+  save: function() {
+    this.localStorage().setItem(this.name, this.records.join(","));
+  },
 
-                if ( value !== null ) mapped.push(value);
-            }
-        }
+  // Add a model, giving it a (hopefully)-unique GUID, if it doesn't already
+  // have an id of it's own.
+  create: function(model) {
+    if (!model.id) model.id = model.attributes[model.idAttribute] = guid();
+    this.localStorage().setItem(this.name+"-"+model.id, JSON.stringify(model));
+    this.records.push(model.id.toString());
+    this.save();
+    return model;
+  },
 
-        return mapped;
-    }
+  // Update a model by replacing its copy in `this.data`.
+  update: function(model) {
+    this.localStorage().setItem(this.name+"-"+model.id, JSON.stringify(model));
+    if (!_.include(this.records, model.id.toString())) this.records.push(model.id.toString()); this.save();
+    return model;
+  },
 
-    /**
-    * Generic reduce function
-    * @param iterable array or object to be reduced
-    * @param callback the callback function(initial, element, i)
-    * @param initial the initial value
-    * @return the reduced value
-    */
-    function reduce(iterable, callback, initial) {
-        for ( var i in iterable ) {
-            if ( iterable.hasOwnProperty(i) ) {
-                initial = callback.call(this, initial, iterable[i], i);
-            }
-        }
+  // Retrieve a model from `this.data` by id.
+  find: function(model) {
+    return JSON.parse(this.localStorage().getItem(this.name+"-"+model.id));
+  },
 
-        return initial;
-    }
+  // Return the array of all models currently in storage.
+  findAll: function() {
+    return _(this.records).chain()
+        .map(function(id){return JSON.parse(this.localStorage().getItem(this.name+"-"+id));}, this)
+        .compact()
+        .value();
+  },
 
-    /**
-    * Utility method for creating a tag
-    * @param name the tag name, e.g., 'text'
-    * @param attrs the attribute string, e.g., name1="val1" name2="val2"
-    * or attribute map, e.g., { name1 : 'val1', name2 : 'val2' }
-    * @param content the content string inside the tag
-    * @returns string of the tag
-    */
-    function tag(name, attrs, matrix, content) {
-        if ( typeof content === 'undefined' || content === null ) {
-            content = '';
-        }
+  // Delete a model from `this.data`, returning it.
+  destroy: function(model) {
+    this.localStorage().removeItem(this.name+"-"+model.id);
+    this.records = _.reject(this.records, function(record_id){return record_id == model.id.toString();});
+    this.save();
+    return model;
+  },
 
-        if ( typeof attrs === 'object' ) {
-            attrs = map(attrs, function(element, name) {
-                if ( name === 'transform') return;
+  localStorage: function() {
+      return localStorage;
+  }
 
-                return name + '="' + escapeXML(element) + '"';
-            }).join(' ');
-        }
+});
 
-        return '<' + name + ( matrix ? ' transform="matrix(' + matrix.toString().replace(/^matrix\(|\)$/g, '') + ')" ' : ' ' ) + attrs + '>' +  content + '</' + name + '>';
-    }
+// localSync delegate to the model or collection's
+// *localStorage* property, which should be an instance of `Store`.
+// window.Store.sync and Backbone.localSync is deprectated, use Backbone.LocalStorage.sync instead
+Backbone.LocalStorage.sync = window.Store.sync = Backbone.localSync = function(method, model, options, error) {
+  var store = model.localStorage || model.collection.localStorage;
 
-    /**
-    * @return object the style object
-    */
-    function extractStyle(node) {
-        return {
-            font: {
-                family: node.attrs.font.replace(/^.*?"(\w+)".*$/, '$1'),
-                size:   typeof node.attrs['font-size'] === 'undefined' ? null : node.attrs['font-size']
-                }
-            };
-    }
-
-    /**
-    * @param style object from style()
-    * @return string
-    */
-    function styleToString(style) {
-        // TODO figure out what is 'normal'
-        return 'font: normal normal normal 10px/normal ' + style.font.family + ( style.font.size === null ? '' : '; font-size: ' + style.font.size + 'px' );
-    }
-
-    /**
-    * Computes tspan dy using font size. This formula was empircally determined
-    * using a best-fit line. Works well in both VML and SVG browsers.
-    * @param fontSize number
-    * @return number
-    */
-    function computeTSpanDy(fontSize, line, lines) {
-        if ( fontSize === null ) fontSize = 10;
-
-        //return fontSize * 4.5 / 13
-        return fontSize * 4.5 / 13 * ( line - .2 - lines / 2 ) * 3.5;
-    }
-
-    var serializer = {
-        'text': function(node) {
-            style = extractStyle(node);
-
-            var tags = new Array;
-
-            map(node.attrs['text'].split('\n'), function(text, iterable, line) {
-                tags.push(tag(
-                    'text',
-                    reduce(
-                        node.attrs,
-                        function(initial, value, name) {
-                            if ( name !== 'text' && name !== 'w' && name !== 'h' ) {
-                                if ( name === 'font-size') value = value + 'px';
-
-                                initial[name] = escapeXML(value.toString());
-                            }
-
-                            return initial;
-                        },
-                        { style: 'text-anchor: middle; ' + styleToString(style) + ';' }
-                        ),
-                    node.matrix,
-                    tag('tspan', { dy: computeTSpanDy(style.font.size, line + 1, node.attrs['text'].split('\n').length) }, null, text)
-                ));
-            });
-
-            return tags;
-        },
-        'path' : function(node) {
-            var initial = ( node.matrix.a === 1 && node.matrix.d === 1 ) ? {} : { 'transform' : node.matrix.toString() };
-
-            return tag(
-                'path',
-                reduce(
-                    node.attrs,
-                    function(initial, value, name) {
-                        if ( name === 'path' ) name = 'd';
-
-                        initial[name] = value.toString();
-
-                        return initial;
-                    },
-                    {}
-                ),
-                node.matrix
-                );
-        }
-        // Other serializers should go here
+  // Backwards compatibility with Backbone <= 0.3.3
+  if (typeof options == 'function') {
+    options = {
+      success: options,
+      error: error
     };
+  }
 
-    R.fn.toSVG = function() {
-        var
-            paper   = this,
-            restore = { svg: R.svg, vml: R.vml },
-            svg     = '<svg style="overflow: hidden; position: relative;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="' + paper.width + '" version="1.1" height="' + paper.height + '">'
-            ;
+  var resp;
 
-        R.svg = true;
-        R.vml = false;
+  switch (method) {
+    case "read":    resp = model.id != undefined ? store.find(model) : store.findAll(); break;
+    case "create":  resp = store.create(model);                            break;
+    case "update":  resp = store.update(model);                            break;
+    case "delete":  resp = store.destroy(model);                           break;
+  }
 
-        for ( var node = paper.bottom; node != null; node = node.next ) {
-            if ( node.node.style.display === 'none' ) continue;
+  if (resp) {
+    options.success(resp);
+  } else {
+    options.error("Record not found");
+  }
+};
 
-            var attrs = '';
+Backbone.ajaxSync = Backbone.sync;
 
-            // Use serializer
-            if ( typeof serializer[node.type] === 'function' ) {
-                svg += serializer[node.type](node);
+Backbone.getSyncMethod = function(model) {
+    if(model.localStorage || (model.collection && model.collection.localStorage))
+    {
+        return Backbone.localSync;
+    }
 
-                continue;
-            }
+    return Backbone.ajaxSync;
+};
 
-            switch ( node.type ) {
-                case 'image':
-                    attrs += ' preserveAspectRatio="none"';
-                    break;
-            }
+// Override 'Backbone.sync' to default to localSync,
+// the original 'Backbone.sync' is still available in 'Backbone.ajaxSync'
+Backbone.sync = function(method, model, options, error) {
+    return Backbone.getSyncMethod(model).apply(this, [method, model, options, error]);
+};
 
-            for ( i in node.attrs ) {
-                var name = i;
-
-                switch ( i ) {
-                    case 'src':
-                        name = 'xlink:href';
-
-                        break;
-                    case 'transform':
-                        name = '';
-
-                        break;
-                }
-
-                if ( name ) {
-                    attrs += ' ' + name + '="' + escapeXML(node.attrs[i].toString()) + '"';
-                }
-            }
-
-            svg += '<' + node.type + ' transform="matrix(' + node.matrix.toString().replace(/^matrix\(|\)$/g, '') + ')"' + attrs + '></' + node.type + '>';
-        }
-
-        svg += '</svg>';
-
-        R.svg = restore.svg;
-        R.vml = restore.vml;
-
-        return svg;
-    };
-})(window.Raphael);
+})();

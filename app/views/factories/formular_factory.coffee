@@ -6,7 +6,6 @@ class exports.FormularFactory
     constructor: ->
         @paper = Raphael('stage', 500, 500)
         save = new Save(@paper)
-        console.log save
         @
 
     create: (parent) ->
