@@ -256,7 +256,6 @@
       this.collection.fetch({
         success: function(coll) {
           return coll.each(function(model) {
-            console.log(model);
             return _this.create(model);
           });
         }
@@ -271,10 +270,7 @@
     Container.prototype.create = function(model) {
       var output,
         _this = this;
-      if (!model) {
-        model = new Formular();
-        this.collection.create(model);
-      }
+      if (!model) model = this.collection.create(new Formular());
       output = new FormularRectRenderer(model, this.paper);
       return output.inputs.forEach(function(input) {
         return _this.inputFactory.create(input, {
@@ -389,7 +385,7 @@
     AbstractInput.prototype.initialize = function(options) {
       this.el = $(this.el).html(this.template);
       this.input = this.el.find('input').addClass(options.size);
-      this.input.val(options.model.get(options.key));
+      this.input.val(options.model.get(options.key).replace('Math\.', ''));
       $(options.parent).append(this.el);
       this.setLabel(options);
       this.setIcon(options);

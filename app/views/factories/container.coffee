@@ -16,7 +16,6 @@ class exports.Container extends Backbone.View
         @collection.fetch(
             success: (coll)=>
                 coll.each (model)=>
-                    console.log model
                     @create (model)
         )
 
@@ -30,8 +29,7 @@ class exports.Container extends Backbone.View
 
     create: (model)-> 
         if !model
-            model = new Formular()
-            @collection.create(model)
+            model =  @collection.create(new Formular())
         output = new FormularRectRenderer(model, @paper)
         output.inputs.forEach((input) => 
             @inputFactory.create(input, {model: model, parent: @inputs})
