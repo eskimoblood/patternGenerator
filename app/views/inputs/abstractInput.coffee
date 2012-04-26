@@ -3,7 +3,7 @@ class exports.AbstractInput extends Backbone.View
     initialize: (options)->
         @el = $(@el).html(@template)
         @input =  @el.find('input').addClass(options.size)     
-        @input.val(options.model.get(options.key))
+        @input.val(options.model.get(options.key).replace('Math\.', ''))
         $(options.parent).append(@el)
         @setLabel options
         @setIcon options
