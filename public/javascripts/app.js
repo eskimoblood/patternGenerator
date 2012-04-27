@@ -48,37 +48,64 @@
     };
   }
 }).call(this);(this.require.define({
-  "views/inputs/color": function(exports, require, module) {
+  "views/inputs/abstractInput": function(exports, require, module) {
     (function() {
-  var AbstractInput,
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-  AbstractInput = require('views/inputs/abstractInput').AbstractInput;
+  exports.AbstractInput = (function(_super) {
 
-  exports.ColorView = (function(_super) {
+    __extends(AbstractInput, _super);
 
-    __extends(ColorView, _super);
-
-    function ColorView() {
-      ColorView.__super__.constructor.apply(this, arguments);
+    function AbstractInput() {
+      this.change = __bind(this.change, this);
+      AbstractInput.__super__.constructor.apply(this, arguments);
     }
 
-    ColorView.prototype.initialize = function(options) {
-      ColorView.__super__.initialize.call(this, options);
-      return this.colorPicker = new jscolor.color(this.input.get(0), {});
+    AbstractInput.prototype.initialize = function(options) {
+      this.el = $(this.el).html(this.template);
+      this.input = this.el.find('input').addClass(options.size);
+      this.input.val(options.model.get(options.key).replace('Math\.', ''));
+      $(options.parent).append(this.el);
+      this.setLabel(options);
+      this.setIcon(options);
+      return this.key = options.key;
     };
 
-    ColorView.prototype.template = '<div class="input-prepend"><span class="add-on"><i/></span><input\
-        /></div>';
+    AbstractInput.prototype.template = '';
 
-    ColorView.prototype.events = {
-      'change': 'change'
+    AbstractInput.prototype.className = 'left';
+
+    AbstractInput.prototype.events = {
+      'keyup': 'change',
+      'mouseup': 'change'
     };
 
-    return ColorView;
+    AbstractInput.prototype.change = function(event) {
+      return this.model.setFormular(this.key, this.input.val());
+    };
 
-  })(AbstractInput);
+    AbstractInput.prototype.setLabel = function(options) {
+      var cid, label;
+      label = this.el.find('label');
+      if (label) {
+        cid = _.uniqueId('x');
+        label.attr('for', cid);
+        label.html(options.label);
+        return this.input.attr('id', cid);
+      }
+    };
+
+    AbstractInput.prototype.setIcon = function(options) {
+      var icon;
+      icon = this.el.find('i');
+      if (icon) return icon.addClass(options.label);
+    };
+
+    return AbstractInput;
+
+  })(Backbone.View);
 
 }).call(this);
 
@@ -111,6 +138,35 @@
   }
 }));
 (this.require.define({
+  "collections/composition": function(exports, require, module) {
+    (function() {
+  var Formular,
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  Formular = require('models/formular').Formular;
+
+  exports.Composition = (function(_super) {
+
+    __extends(Composition, _super);
+
+    function Composition() {
+      Composition.__super__.constructor.apply(this, arguments);
+    }
+
+    Composition.prototype.model = Formular;
+
+    Composition.prototype.localStorage = new Store('composition');
+
+    return Composition;
+
+  })(Backbone.Collection);
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
   "models/formular": function(exports, require, module) {
     (function() {
   var __hasProp = Object.prototype.hasOwnProperty,
@@ -129,7 +185,6 @@
     };
 
     Formular.prototype.defaults = {
-      formular: 'sin(x)',
       stepSize: 1
     };
 
@@ -202,15 +257,14 @@
       HomeView.__super__.constructor.apply(this, arguments);
     }
 
-    HomeView.prototype.tagName = 'div';
-
     HomeView.prototype.initialize = function() {
-      this.factory = new FormularFactory;
-      return this.el = $('#inputs').on('click', '.icon-plus', this.add);
+      this.el = $('#inputs');
+      this.factory = new FormularFactory(this.el.find('ul'));
+      return this.el = this.el.on('click', '.icon-plus', this.add);
     };
 
     HomeView.prototype.add = function() {
-      return this.factory.create(this.el.find('ul'));
+      return this.factory.create;
     };
 
     return HomeView;
@@ -224,7 +278,7 @@
 (this.require.define({
   "views/factories/container": function(exports, require, module) {
     (function() {
-  var Composition, Formular, FormularLineRenderer, FormularRectRenderer, InputFactory,
+  var Formular, FormularLineRenderer, FormularRectRenderer, InputFactory,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
@@ -236,8 +290,6 @@
 
   Formular = require('models/formular').Formular;
 
-  Composition = require('collections/composition').Composition;
-
   exports.Container = (function(_super) {
 
     __extends(Container, _super);
@@ -247,25 +299,16 @@
     }
 
     Container.prototype.initialize = function(options) {
-      var _this = this;
       this.el = $(this.el).html(this.template);
       this.inputs = this.el.find('div');
       this.paper = options.paper;
       this.inputFactory = new InputFactory;
-      this.collection = new Composition;
-      this.collection.fetch({
-        success: function(coll) {
-          return coll.each(function(model) {
-            return _this.create(model);
-          });
-        }
-      });
-      return options.parent.append(this.el);
+      return $(options.parent).append(this.el);
     };
 
     Container.prototype.tagName = 'li';
 
-    Container.prototype.template = '<div/>';
+    Container.prototype.template = '<div><button><i class="icon-remove"/></button></div>';
 
     Container.prototype.create = function(model) {
       var output,
@@ -291,7 +334,7 @@
 (this.require.define({
   "views/factories/formular_factory": function(exports, require, module) {
     (function() {
-  var Container, Save, Slider;
+  var Composition, Container, Save, Slider;
 
   Slider = require('views/widgets/slider').Slider;
 
@@ -299,20 +342,32 @@
 
   Save = require('views/widgets/save').Save;
 
+  Composition = require('collections/composition').Composition;
+
   exports.FormularFactory = (function() {
 
-    function FormularFactory() {
-      var save;
+    function FormularFactory(parent) {
+      var save,
+        _this = this;
+      this.parent = parent;
       this.paper = Raphael('stage', 500, 500);
       save = new Save(this.paper);
-      this;
+      this.collection = new Composition;
+      this.collection.fetch({
+        success: function(coll) {
+          return coll.each(function(model) {
+            return _this.create(model);
+          });
+        }
+      });
     }
 
-    FormularFactory.prototype.create = function(parent) {
+    FormularFactory.prototype.create = function(model) {
+      console.log(model, this.parent);
       new Container({
-        parent: parent,
+        parent: this.parent,
         paper: this.paper
-      });
+      }).create(model);
       return this;
     };
 
@@ -340,7 +395,6 @@
   exports.InputFactory = (function() {
 
     function InputFactory() {
-      console.log(this.inputs);
       this.slider = new Slider();
     }
 
@@ -361,70 +415,6 @@
     return InputFactory;
 
   })();
-
-}).call(this);
-
-  }
-}));
-(this.require.define({
-  "views/inputs/abstractInput": function(exports, require, module) {
-    (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = Object.prototype.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
-  exports.AbstractInput = (function(_super) {
-
-    __extends(AbstractInput, _super);
-
-    function AbstractInput() {
-      this.change = __bind(this.change, this);
-      AbstractInput.__super__.constructor.apply(this, arguments);
-    }
-
-    AbstractInput.prototype.initialize = function(options) {
-      this.el = $(this.el).html(this.template);
-      this.input = this.el.find('input').addClass(options.size);
-      this.input.val(options.model.get(options.key).replace('Math\.', ''));
-      $(options.parent).append(this.el);
-      this.setLabel(options);
-      this.setIcon(options);
-      return this.key = options.key;
-    };
-
-    AbstractInput.prototype.template = '';
-
-    AbstractInput.prototype.className = 'left';
-
-    AbstractInput.prototype.events = {
-      'keyup': 'change',
-      'mouseup': 'change'
-    };
-
-    AbstractInput.prototype.change = function(event) {
-      return this.model.setFormular(this.key, this.input.val());
-    };
-
-    AbstractInput.prototype.setLabel = function(options) {
-      var cid, label;
-      label = this.el.find('label');
-      if (label) {
-        cid = _.uniqueId('x');
-        label.attr('for', cid);
-        label.html(options.label);
-        return this.input.attr('id', cid);
-      }
-    };
-
-    AbstractInput.prototype.setIcon = function(options) {
-      var icon;
-      icon = this.el.find('i');
-      if (icon) return icon.addClass(options.label);
-    };
-
-    return AbstractInput;
-
-  })(Backbone.View);
 
 }).call(this);
 
@@ -462,6 +452,43 @@
   })(BrunchApplication);
 
   window.app = new exports.Application;
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "views/inputs/color": function(exports, require, module) {
+    (function() {
+  var AbstractInput,
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  AbstractInput = require('views/inputs/abstractInput').AbstractInput;
+
+  exports.ColorView = (function(_super) {
+
+    __extends(ColorView, _super);
+
+    function ColorView() {
+      ColorView.__super__.constructor.apply(this, arguments);
+    }
+
+    ColorView.prototype.initialize = function(options) {
+      ColorView.__super__.initialize.call(this, options);
+      return this.colorPicker = new jscolor.color(this.input.get(0), {});
+    };
+
+    ColorView.prototype.template = '<div class="input-prepend"><span class="add-on"><i/></span><input\
+        /></div>';
+
+    ColorView.prototype.events = {
+      'change': 'change'
+    };
+
+    return ColorView;
+
+  })(AbstractInput);
 
 }).call(this);
 
@@ -847,35 +874,6 @@
     return Slider;
 
   })(Backbone.View);
-
-}).call(this);
-
-  }
-}));
-(this.require.define({
-  "collections/composition": function(exports, require, module) {
-    (function() {
-  var Formular,
-    __hasProp = Object.prototype.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
-  Formular = require('models/formular').Formular;
-
-  exports.Composition = (function(_super) {
-
-    __extends(Composition, _super);
-
-    function Composition() {
-      Composition.__super__.constructor.apply(this, arguments);
-    }
-
-    Composition.prototype.model = Formular;
-
-    Composition.prototype.localStorage = new Store('composition');
-
-    return Composition;
-
-  })(Backbone.Collection);
 
 }).call(this);
 

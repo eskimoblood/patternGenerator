@@ -2,8 +2,6 @@
 {FormularRectRenderer} =  require 'views/renderer/formular_rect'
 {InputFactory} =  require 'views/factories/input_factory'
 {Formular} = require 'models/formular'
-{Composition} = require 'collections/composition'
-
 
 class exports.Container extends Backbone.View
 
@@ -12,20 +10,11 @@ class exports.Container extends Backbone.View
         @inputs = @el.find('div')
         @paper = options.paper
         @inputFactory = new InputFactory
-        @collection = new Composition
-        @collection.fetch(
-            success: (coll)=>
-                coll.each (model)=>
-                    @create (model)
-        )
-
-        options.parent.append @el
-
-
+        $(options.parent).append @el
 
     tagName: 'li'
 
-    template: '<div/>'
+    template: '<div><button><i class="icon-remove"/></button></div>'
 
     create: (model)-> 
         if !model

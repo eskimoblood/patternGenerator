@@ -3,7 +3,6 @@ class exports.Formular extends Backbone.Model
         @mathMember = '(' + Object.getOwnPropertyNames(Math).join(')|(') + ')'
 	
     defaults:
-        formular: 'sin(x)'
         stepSize: 1
 
     setFormular: (key, formular) ->

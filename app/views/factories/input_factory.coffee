@@ -3,9 +3,9 @@
 {Range} = require 'views/inputs/range'
 {Slider} = require 'views/widgets/slider'
 
-class exports.InputFactory 
+class exports.InputFactory
+
     constructor: ->
-        console.log @inputs
         @slider= new Slider()
 
     create: (input, options) ->
