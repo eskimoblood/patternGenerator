@@ -2,6 +2,7 @@
 {Container} = require 'views/factories/container'
 {Save} = require 'views/widgets/save'
 {Composition} = require 'collections/composition'
+{Formular} = require 'models/formular'
 
 class exports.FormularFactory
 
@@ -17,7 +18,8 @@ class exports.FormularFactory
         )
 
     create: (model) ->
-        console.log model, @parent
+        if !model
+            model =  @collection.create(new Formular())
         new Container(
             parent: @parent
             paper: @paper

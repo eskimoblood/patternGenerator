@@ -1,7 +1,6 @@
 {FormularLineRenderer} =  require 'views/renderer/formular_line'
 {FormularRectRenderer} =  require 'views/renderer/formular_rect'
 {InputFactory} =  require 'views/factories/input_factory'
-{Formular} = require 'models/formular'
 
 class exports.Container extends Backbone.View
 
@@ -11,16 +10,20 @@ class exports.Container extends Backbone.View
         @paper = options.paper
         @inputFactory = new InputFactory
         $(options.parent).append @el
+        @el.on('click', 'button.remove', @remove)
 
     tagName: 'li'
 
-    template: '<div><button><i class="icon-remove"/></button></div>'
+    template: '<div><button class="remove"><i class="icon-remove"/></button></div>'
 
-    create: (model)-> 
-        if !model
-            model =  @collection.create(new Formular())
-        output = new FormularRectRenderer(model, @paper)
-        output.inputs.forEach((input) => 
+    create: (@model)->
+        @renderer = new FormularRectRenderer(model, @paper)
+        @renderer.inputs.forEach((input) =>
             @inputFactory.create(input, {model: model, parent: @inputs})
         )
 
+    remove: =>
+        @model.destroy()
+        @el.remove()
+        @renderer.remove()
+        @renderer = null

@@ -8,5 +8,5 @@ class exports.HomeView extends Backbone.View
         @el = @el.on('click', '.icon-plus', @add)
 
     add: =>
-        @factory.create
+        @factory.create()
         

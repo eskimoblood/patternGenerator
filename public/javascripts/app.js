@@ -64,9 +64,13 @@
     }
 
     AbstractInput.prototype.initialize = function(options) {
+      var formular;
       this.el = $(this.el).html(this.template);
       this.input = this.el.find('input').addClass(options.size);
-      this.input.val(options.model.get(options.key).replace('Math\.', ''));
+      formular = options.model.get(options.key);
+      if (formular && typeof formular === 'string') {
+        this.input.val(formular.replace('Math\.', ''));
+      }
       $(options.parent).append(this.el);
       this.setLabel(options);
       this.setIcon(options);
@@ -264,7 +268,7 @@
     };
 
     HomeView.prototype.add = function() {
-      return this.factory.create;
+      return this.factory.create();
     };
 
     return HomeView;
@@ -278,7 +282,8 @@
 (this.require.define({
   "views/factories/container": function(exports, require, module) {
     (function() {
-  var Formular, FormularLineRenderer, FormularRectRenderer, InputFactory,
+  var FormularLineRenderer, FormularRectRenderer, InputFactory,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
@@ -288,13 +293,12 @@
 
   InputFactory = require('views/factories/input_factory').InputFactory;
 
-  Formular = require('models/formular').Formular;
-
   exports.Container = (function(_super) {
 
     __extends(Container, _super);
 
     function Container() {
+      this.remove = __bind(this.remove, this);
       Container.__super__.constructor.apply(this, arguments);
     }
 
@@ -303,24 +307,31 @@
       this.inputs = this.el.find('div');
       this.paper = options.paper;
       this.inputFactory = new InputFactory;
-      return $(options.parent).append(this.el);
+      $(options.parent).append(this.el);
+      return this.el.on('click', 'button.remove', this.remove);
     };
 
     Container.prototype.tagName = 'li';
 
-    Container.prototype.template = '<div><button><i class="icon-remove"/></button></div>';
+    Container.prototype.template = '<div><button class="remove"><i class="icon-remove"/></button></div>';
 
     Container.prototype.create = function(model) {
-      var output,
-        _this = this;
-      if (!model) model = this.collection.create(new Formular());
-      output = new FormularRectRenderer(model, this.paper);
-      return output.inputs.forEach(function(input) {
+      var _this = this;
+      this.model = model;
+      this.renderer = new FormularRectRenderer(model, this.paper);
+      return this.renderer.inputs.forEach(function(input) {
         return _this.inputFactory.create(input, {
           model: model,
           parent: _this.inputs
         });
       });
+    };
+
+    Container.prototype.remove = function() {
+      this.model.destroy();
+      this.el.remove();
+      this.renderer.remove();
+      return this.renderer = null;
     };
 
     return Container;
@@ -334,7 +345,7 @@
 (this.require.define({
   "views/factories/formular_factory": function(exports, require, module) {
     (function() {
-  var Composition, Container, Save, Slider;
+  var Composition, Container, Formular, Save, Slider;
 
   Slider = require('views/widgets/slider').Slider;
 
@@ -343,6 +354,8 @@
   Save = require('views/widgets/save').Save;
 
   Composition = require('collections/composition').Composition;
+
+  Formular = require('models/formular').Formular;
 
   exports.FormularFactory = (function() {
 
@@ -363,7 +376,7 @@
     }
 
     FormularFactory.prototype.create = function(model) {
-      console.log(model, this.parent);
+      if (!model) model = this.collection.create(new Formular());
       new Container({
         parent: this.parent,
         paper: this.paper
@@ -443,7 +456,7 @@
 
     Application.prototype.initialize = function() {
       this.router = new MainRouter;
-      this.homeView = new HomeView().add();
+      this.homeView = new HomeView();
       return this;
     };
 
@@ -598,6 +611,12 @@
       } catch (e) {
         return null;
       }
+    };
+
+    AbstractFormularRenderer.prototype.remove = function() {
+      return this.set.forEach(function(el) {
+        return el.remove();
+      });
     };
 
     return AbstractFormularRenderer;

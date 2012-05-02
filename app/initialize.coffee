@@ -7,7 +7,7 @@ class exports.Application extends BrunchApplication
 
     initialize: ->
         @router = new MainRouter
-        @homeView = new HomeView().add()
+        @homeView = new HomeView()
         @
 
 window.app = new exports.Application

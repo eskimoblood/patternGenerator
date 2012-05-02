@@ -14,3 +14,6 @@ class exports.AbstractFormularRenderer
             eval(@model.get(key).replace('x', x))
         catch e 
             null
+
+    remove: ->
+        @set.forEach (el)-> el.remove()

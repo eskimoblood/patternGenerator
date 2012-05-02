@@ -2,8 +2,10 @@ class exports.AbstractInput extends Backbone.View
 
     initialize: (options)->
         @el = $(@el).html(@template)
-        @input =  @el.find('input').addClass(options.size)     
-        @input.val(options.model.get(options.key).replace('Math\.', ''))
+        @input =  @el.find('input').addClass(options.size)
+        formular = options.model.get(options.key)
+        if formular and typeof formular is 'string'
+          @input.val(formular.replace('Math\.', ''))
         $(options.parent).append(@el)
         @setLabel options
         @setIcon options
