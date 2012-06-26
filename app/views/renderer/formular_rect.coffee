@@ -7,15 +7,17 @@ class exports.FormularRectRenderer extends AbstractFormularRenderer
 
         stepsize = @model.get('stepSize') * 1
         if stepsize
-            for x in [0..@paper.width] by stepsize
-                @drawRect(x)
 
-    drawRect: (t) ->
-        x = @calculate('positionX', t)
-        y = @calculate('positionY', t)
-        rotation = @calculate('rotation', t)
-        width = @calculate('width', t)
-        height = @calculate('height', t)
+            for i in [0.. @model.get('repeat') || 1] by 1
+              for x in [0..@paper.width] by stepsize
+                  @drawRect(x, i)
+
+    drawRect: (t, i) ->
+        x = @calculate('positionX', t, i)
+        y = @calculate('positionY', t, i)
+        rotation = @calculate('rotation', t, i)
+        width = @calculate('width', t, i)
+        height = @calculate('height', t, i)
         stroke = {'stroke':  '#' + @model.get('color')}
         if typeof y is 'number' and typeof x is 'number'
             rect = @paper.rect x, y, width, height
@@ -28,6 +30,11 @@ class exports.FormularRectRenderer extends AbstractFormularRenderer
         label: 'icon-repeat'
         type: 'Input'
         key: 'rotation'
+        size:'span2'
+    ,
+        label: 'icon-repeat'
+        type: 'Input'
+        key: 'repeat'
         size:'span2'
     ,
         label: 'icon-resize-horizontal'

@@ -8,10 +8,9 @@ class exports.AbstractFormularRenderer
 
     render: ->
 
-
-    calculate: (key, x)->
+    calculate: (key, t, i)->
         try
-            eval(@model.get(key).replace('x', x))
+            eval(@model.get(key).replace('\bt\b', t).replace('\bi\b', i))
         catch e 
             null
 

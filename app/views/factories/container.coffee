@@ -17,7 +17,7 @@ class exports.Container extends Backbone.View
     template: '<div><button class="remove"><i class="icon-remove"/></button></div>'
 
     create: (@model)->
-        @renderer = new FormularRectRenderer(model, @paper)
+        @renderer = new FormularLineRenderer(model, @paper)
         @renderer.inputs.forEach((input) =>
             @inputFactory.create(input, {model: model, parent: @inputs})
         )
